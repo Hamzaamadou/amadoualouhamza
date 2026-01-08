@@ -1,16 +1,16 @@
-// db.js
-const mongoose = require('mongoose');
+// db.js corrigé
+import mongoose from 'mongoose'; // Utilisez import au lieu de require
 
-// Connexion à MongoDB avec options et gestion des erreurs
+// Connexion à MongoDB
 mongoose.connect(
   process.env.MONGO_URI || 'mongodb://localhost:27017/aha_topup',
   {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
   }
 )
 .then(() => console.log("✅ MongoDB connecté"))
 .catch(err => console.error("❌ Erreur MongoDB :", err));
 
-// Exporter mongoose pour l'utiliser dans les modèles
-module.exports = mongoose;
+// EXPORT OBLIGATOIRE POUR LE MODULE
+export default mongoose;
