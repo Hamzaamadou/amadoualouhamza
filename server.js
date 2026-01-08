@@ -1,4 +1,3 @@
-// backend/server.js
 import express from 'express';
 import mongoose from './db.js';
 import bodyParser from 'body-parser';
@@ -7,7 +6,7 @@ import cors from 'cors';
 import websocket from './websocket.js';
 import walletRouter from './wallet.js';
 
-// Importation des routes (Obligation d'ajouter l'extension .js)
+// Importation des routes (Vérifiez que ces fichiers existent bien dans un dossier 'routes')
 import authRouter from './routes/auth.js';
 import ordersRouter from './routes/orders.js';
 import adminRouter from './routes/admin.js';
@@ -19,7 +18,7 @@ import creditRouter from './routes/credit.js';
 const app = express();
 const server = http.createServer(app);
 
-// Configuration CORS (déplacé en haut pour plus de clarté)
+// Configuration CORS
 app.use(cors({
     origin: ["https://ahatopup.netlify.app"]
 }));
@@ -30,7 +29,7 @@ websocket(server);
 // Middleware
 app.use(bodyParser.json());
 
-// Routes principales (Remplacement des require par les imports ci-dessus)
+// Routes principales
 app.use('/auth', authRouter);
 app.use('/orders', ordersRouter);
 app.use('/admin', adminRouter);
