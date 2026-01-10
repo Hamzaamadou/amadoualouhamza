@@ -1,16 +1,11 @@
-// db.js corrigé
-import mongoose from 'mongoose'; // Utilisez import au lieu de require
+const mongoose = require("mongoose");
 
-// Connexion à MongoDB
-mongoose.connect(
-  process.env.MONGO_URI || 'mongodb://localhost:27017/aha_topup',
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+module.exports = async function connectDB() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("✅ MongoDB connecté");
+  } catch (err) {
+    console.error("❌ MongoDB erreur :", err);
+    process.exit(1);
   }
-)
-.then(() => console.log("✅ MongoDB connecté"))
-.catch(err => console.error("❌ Erreur MongoDB :", err));
-
-// EXPORT OBLIGATOIRE POUR LE MODULE
-export default mongoose;
+};
