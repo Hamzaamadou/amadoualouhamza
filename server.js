@@ -1,45 +1,47 @@
 require("dotenv").config();
-
 const express = require("express");
-const http = require("http");
+const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-
-const connectDB = require("./db");
+const http = require("http");
 const websocket = require("./websocket");
 
 // Routes
 const authRoutes = require("./routes/auth");
-const orderRoutes = require("./routes/orders");
+const ordersRoutes = require("./routes/orders");
 const adminRoutes = require("./routes/admin");
-const analyticsRoutes = require("./routes/admin-analytics");
+const adminAnalyticsRoutes = require("./routes/admin-analytics");
+const webhookRoutes = require("./routes/webhook");
+const plansRoutes = require("./routes/plans");
+const creditRoutes = require("./routes/credit");
 const walletRoutes = require("./routes/wallet");
 
 const app = express();
 const server = http.createServer(app);
 
-// Middleware
-app.use(cors({
-  origin: ["https://ahatopup.netlify.app"],
-  credentials: true
-}));
-app.use(bodyParser.json());
-
-// MongoDB
-connectDB();
-
 // WebSocket
 websocket(server);
 
-// Routes
+// Middleware
+app.use(cors({ origin: ["https://ahatopup.netlify.app"] }));
+app.use(bodyParser.json());
+
+// Routes principales
 app.use("/auth", authRoutes);
-app.use("/orders", orderRoutes);
+app.use("/orders", ordersRoutes);
 app.use("/admin", adminRoutes);
-app.use("/admin/analytics", analyticsRoutes);
+app.use("/admin/analytics", adminAnalyticsRoutes);
+app.use("/webhook", webhookRoutes);
+app.use("/plans", plansRoutes);
+app.use("/credit", creditRoutes);
 app.use("/wallet", walletRoutes);
 
-// Server
+// MongoDB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connecté"))
+  .catch((err) => console.error("Erreur MongoDB :", err));
+
+// Lancement serveur
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
