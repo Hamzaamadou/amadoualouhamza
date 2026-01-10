@@ -1,10 +1,12 @@
-import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+const express = require("express");
+const { PrismaClient } = require("@prisma/client");
 
+const router = express.Router();
 const prisma = new PrismaClient();
-const router = Router();
 
-// Route pour récupérer les statistiques complètes par userId
+/**
+ * 📊 Statistiques complètes par userId
+ */
 router.get("/stats/:userId", async (req, res) => {
   const { userId } = req.params;
 
@@ -13,7 +15,9 @@ router.get("/stats/:userId", async (req, res) => {
       where: { userId }
     });
 
-    if (!wallet) return res.status(404).json({ message: "Wallet non trouvé" });
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet non trouvé" });
+    }
 
     const ordersStats = await prisma.order.aggregate({
       where: { userId },
@@ -44,15 +48,22 @@ router.get("/stats/:userId", async (req, res) => {
   }
 });
 
-// Route simple pour le solde (ajoutée proprement)
-router.get('/balance/:userId', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const wallet = await prisma.wallet.findUnique({ where: { userId } });
-        res.json({ balance: wallet ? wallet.balance : 0 });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+/**
+ * 💰 Solde du wallet
+ */
+router.get("/balance/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const wallet = await prisma.wallet.findUnique({
+      where: { userId }
+    });
+
+    res.json({
+      balance: wallet ? wallet.balance : 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-export default router;
+module.exports = router;
