@@ -1,33 +1,19 @@
-const express = require('express');
-const app = express();
-app.use(express.json());
+const cinetpay = require("./cinetpay");
+const paydunya = require("./paydunya");
+const flutterwave = require("./flutterwave");
 
-app.post('/ussd', (req, res) => {
-  const { code } = req.body;
-  console.log("Composer USSD :", code);
+module.exports = async function pay(provider, payload) {
+  switch (provider) {
+    case "cinetpay":
+      return cinetpay.pay(payload);
 
-  // Ici tu relies à un auto-dialer Android
-  // ou une app USSD Gateway
+    case "paydunya":
+      return paydunya.pay(payload);
 
-  res.json({ status: "SENT", code });
-});
+    case "flutterwave":
+      return flutterwave.pay(payload);
 
-app.listen(8080, () => {
-  console.log("SIM BOX active sur port 8080");
-});
-
-app.post('/ussd', (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ error: "Code USSD manquant" });
-    
-    console.log("Composer USSD :", code);
-    
-    // Ici ton auto-dialer / gateway
-    
-    res.json({ status: "SENT", code });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erreur serveur" });
+    default:
+      throw new Error("Provider de paiement non supporté");
   }
-});
+};
