@@ -1,38 +1,90 @@
-// backend/routes/webhook.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Order = require('../models/Order');
-const { broadcast } = require('../websocket');
-const { log } = require('../services/logger');
+const Order = require("../models/Order");
+const { broadcast } = require("../websocket");
+const { log } = require("../services/logger");
 
-// Callback opérateur pour mise à jour de commande
-router.post('/operator/:operator', async (req, res) => {
-  const { reference, status } = req.body;
+/**
+ * 📡 Callback opérateur (livraison crédit / data)
+ */
+router.post("/operator/:operator", async (req, res) => {
+  try {
+    const { reference, status } = req.body;
+    const { operator } = req.params;
 
-  const order = await Order.findOne({ reference });
-  if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (!reference || !status) {
+      return res.status(400).json({ message: "Invalid payload" });
+    }
 
-  order.status = status === 'success' ? 'delivered' : 'failed';
-  await order.save();
+    const order = await Order.findOne({ reference });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-  broadcast({ type: 'ORDER_UPDATE', order });
-  await log('SYSTEM', 'OPERATOR_CALLBACK', { orderId: order._id, status });
+    order.status = status === "success" ? "delivered" : "failed";
+    await order.save();
 
-  res.json({ ok: true });
+    broadcast({ type: "ORDER_UPDATE", order });
+
+    await log("SYSTEM", "OPERATOR_CALLBACK", {
+      operator,
+      orderId: order._id,
+      status
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Operator webhook error:", err);
+    res.sendStatus(500);
+  }
 });
 
-// Callback pour paiement réussi
-router.post('/payment', async (req, res) => {
-  const { transactionId, status } = req.body;
+/**
+ * 💳 Callback paiement générique
+ */
+router.post("/payment", async (req, res) => {
+  try {
+    const { transactionId, status } = req.body;
+    if (!transactionId) return res.sendStatus(400);
 
-  if (status === 'SUCCESS') {
-    await Order.findOneAndUpdate(
-      { transactionId },
-      { status: 'PAID' }
-    );
+    if (status === "SUCCESS") {
+      await Order.findOneAndUpdate(
+        { transactionId },
+        { status: "PAID" }
+      );
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Payment webhook error:", err);
+    res.sendStatus(500);
   }
+});
 
-  res.sendStatus(200);
+/**
+ * 💰 Callback officiel CinetPay
+ */
+router.post("/cinetpay", async (req, res) => {
+  try {
+    const { cpm_trans_id, cpm_result } = req.body;
+    if (!cpm_trans_id) return res.sendStatus(400);
+
+    const order = await Order.findById(cpm_trans_id);
+    if (!order) return res.sendStatus(404);
+
+    if (cpm_result === "00") {
+      order.paymentStatus = "success";
+      order.status = "paid";
+    } else {
+      order.paymentStatus = "failed";
+    }
+
+    await order.save();
+    res.send("OK");
+  } catch (err) {
+    console.error("CinetPay webhook error:", err);
+    res.sendStatus(500);
+  }
 });
 
 module.exports = router;
