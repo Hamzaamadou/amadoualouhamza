@@ -1,46 +1,45 @@
-import express from 'express';
-import mongoose from './db.js';
-import bodyParser from 'body-parser';
-import http from 'http';
-import cors from 'cors';
-import websocket from './websocket.js';
-import walletRouter from './wallet.js';
+require("dotenv").config();
 
-// Importation des routes (Vérifiez que ces fichiers existent bien dans un dossier 'routes')
-import authRouter from './routes/auth.js';
-import ordersRouter from './routes/orders.js';
-import adminRouter from './routes/admin.js';
-import adminAnalyticsRouter from './routes/admin-analytics.js';
-import webhookRouter from './routes/webhook.js';
-import plansRouter from './routes/plans.js';
-import creditRouter from './routes/credit.js';
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+
+const connectDB = require("./db");
+const websocket = require("./websocket");
+
+// Routes
+const authRoutes = require("./routes/auth");
+const orderRoutes = require("./routes/orders");
+const adminRoutes = require("./routes/admin");
+const analyticsRoutes = require("./routes/admin-analytics");
+const walletRoutes = require("./routes/wallet");
 
 const app = express();
 const server = http.createServer(app);
 
-// Configuration CORS
-app.use(cors({
-    origin: ["https://ahatopup.netlify.app"]
-}));
-
-// Initialisation WebSocket
-websocket(server);
-
 // Middleware
+app.use(cors({
+  origin: ["https://ahatopup.netlify.app"],
+  credentials: true
+}));
 app.use(bodyParser.json());
 
-// Routes principales
-app.use('/auth', authRouter);
-app.use('/orders', ordersRouter);
-app.use('/admin', adminRouter);
-app.use('/admin/analytics', adminAnalyticsRouter);
-app.use('/webhook', webhookRouter);
-app.use('/plans', plansRouter);
-app.use('/credit', creditRouter);
-app.use('/wallet', walletRouter);
+// MongoDB
+connectDB();
 
-// Lancement du serveur
+// WebSocket
+websocket(server);
+
+// Routes
+app.use("/auth", authRoutes);
+app.use("/orders", orderRoutes);
+app.use("/admin", adminRoutes);
+app.use("/admin/analytics", analyticsRoutes);
+app.use("/wallet", walletRoutes);
+
+// Server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🚀 Backend running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
